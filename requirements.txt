@@ -1,0 +1,18 @@
+# core
+fastapi
+uvicorn[standard]
+python-multipart
+rasterio
+numpy
+pillow
+
+# training / models
+torch
+transformers>=4.49
+peft
+bitsandbytes
+accelerate
+huggingface_hub
+
+# evaluation
+pycocoevalcap

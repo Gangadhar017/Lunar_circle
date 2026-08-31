@@ -46,20 +46,45 @@ flowchart LR
 
 ## 📚 Datasets (as prescribed)
 
-- **BigEarthNet** — primary fine-tuning: co-registered Sentinel-1 SAR + Sentinel-2 multispectral with text annotations
+- **BigEarthNet.txt** ([arXiv:2603.29630](https://arxiv.org/abs/2603.29630) · [txt.bigearth.net](https://txt.bigearth.net)) — primary fine-tuning: **464,044 co-registered Sentinel-1 SAR + Sentinel-2 multispectral** images with **9.6M annotations** — geographically anchored captions, VQA pairs, and referring-expression detection instructions, plus a manually verified benchmark split
 - **VRSBench** — evaluation: single-image captioning, grounding & VQA
 - **RSVQA** — evaluation: remote-sensing visual question answering
 - **CDVQA** — evaluation: multitemporal change-based VQA
+
+Full dataset cards, layout and download helper: [`data/README.md`](data/README.md) · `python scripts/download_datasets.py`
 
 Final evaluation additionally targets the ISRO/SAC hidden set of pre-georeferenced **Cartosat-2S optical + RISAT SAR** pairs.
 
 ## 📁 Repository
 
 ```
-├── demo/SatQuery_AI_Demo.html      # interactive prototype (open in browser)
-├── docs/SatQuery_AI_SIH_26167.pptx # idea-round presentation deck
-└── docs/screenshots/               # demo captures
+├── demo/SatQuery_AI_Demo.html        # interactive prototype (open in browser)
+├── docs/SatQuery_AI_SIH_26167.pptx   # idea-round presentation deck
+├── data/README.md                    # dataset cards (BigEarthNet.txt, VRSBench, RSVQA, CDVQA)
+├── scripts/download_datasets.py      # dataset layout / download helper
+└── src/
+    ├── satquery/
+    │   ├── controller.py             # agentic controller: classify → validate → route → trace
+    │   ├── validator.py              # input compatibility checks (format, modality, CRS, co-reg)
+    │   ├── registry.py               # specialist model registry + permitted parameters
+    │   └── models/                   # rsvqa-lora · geocap-ground · changeformer-cdvqa · sarfusion-net
+    ├── train/finetune_lora.py        # LoRA adaptation on BigEarthNet.txt (4-bit, single-GPU)
+    ├── eval/evaluate.py              # accuracy · BLEU/CIDEr · IoU on prescribed test splits
+    └── api/main.py                   # FastAPI /analyze — the contract the demo frontend targets
 ```
+
+### Quickstart
+
+```bash
+pip install -r requirements.txt
+python scripts/download_datasets.py                 # prepare data/ layout
+python src/train/finetune_lora.py --task vqa \
+    --data data/bigearthnet_txt --out checkpoints/rsvqa-lora-v2
+uvicorn src.api.main:app --reload                   # serve the agentic backend
+```
+
+The controller, validator, task router and API contract run today (`NotTrainedYet` is surfaced
+cleanly until adapters from `finetune_lora.py` are attached to each specialist's `weights_path`).
 
 ## 🗺 Roadmap to finals
 
