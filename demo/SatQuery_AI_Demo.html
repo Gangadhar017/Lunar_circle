@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SatQuery AI — Mission Console · PS 26167</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --space:#070D1F; --panel:#0C1530; --panel2:#101B3C; --edge:#1D2C55; --edge2:#2A3D6E;
+  --cyan:#38BDF8; --cyan-dim:#0EA5E9; --orange:#F97316; --green:#34D399; --red:#F87171;
+  --ink:#E7EEFB; --mut:#8FA3C8; --mut2:#5E729B;
+  --font:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font); background:var(--space); color:var(--ink);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(56,189,248,.08), transparent 60%),
+    linear-gradient(rgba(29,44,85,.28) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29,44,85,.28) 1px, transparent 1px);
+  background-size:auto, 34px 34px, 34px 34px;
+  min-height:100vh;
+}
+::selection{background:rgba(56,189,248,.3)}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--edge);
+  background:rgba(7,13,31,.85);backdrop-filter:blur(6px);position:sticky;top:0;z-index:50}
+.mark{display:flex;align-items:center;gap:10px}
+.mark .orb{width:30px;height:30px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 35% 35%, #56CCF9, #0B67A8 65%, #063B57);box-shadow:0 0 14px rgba(56,189,248,.55)}
+.mark .orb::after{content:"";position:absolute;inset:-6px;border:1px solid rgba(56,189,248,.5);border-radius:50%;
+  transform:rotate(-18deg) scaleY(.42)}
+.mark h1{font-size:19px;font-weight:700;letter-spacing:.2px}
+.mark h1 span{color:var(--cyan)}
+.chip{font-family:var(--mono);font-size:11px;color:var(--mut);border:1px solid var(--edge);border-radius:999px;
+  padding:4px 11px;background:var(--panel)}
+.chip b{color:var(--ink);font-weight:600}
+.sim{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--orange);
+  border:1px solid rgba(249,115,22,.45);border-radius:999px;padding:5px 12px;background:rgba(249,115,22,.08)}
+.sim .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ---------- layout ---------- */
+.wrap{display:grid;grid-template-columns:330px minmax(0,1fr) 318px;gap:16px;padding:16px 22px;max-width:1560px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--edge);border-radius:12px;overflow:hidden}
+.phead{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--edge);
+  font-size:12px;font-weight:600;letter-spacing:1.4px;color:var(--mut);text-transform:uppercase}
+.phead .tick{width:8px;height:8px;border-radius:2px;background:var(--cyan)}
+.phead.or .tick{background:var(--orange)}
+.pbody{padding:14px}
+
+/* ---------- scenarios ---------- */
+.scen{display:grid;gap:8px}
+.scen button{display:flex;align-items:center;gap:10px;text-align:left;background:var(--panel2);border:1px solid var(--edge);
+  border-radius:9px;padding:10px 12px;color:var(--ink);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;
+  transition:border-color .15s, background .15s}
+.scen button small{display:block;font-weight:400;color:var(--mut);font-size:11px;margin-top:2px}
+.scen button:hover{border-color:var(--edge2)}
+.scen button.active{border-color:var(--cyan);background:rgba(56,189,248,.08)}
+.scen .glyph{font-size:16px;width:26px;text-align:center;flex:none}
+
+/* ---------- slots ---------- */
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.slot{border:1px dashed var(--edge2);border-radius:9px;background:var(--panel2);min-height:120px;position:relative;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+.slot canvas,.slot img{width:100%;height:120px;object-fit:cover;display:block}
+.slot .tag{position:absolute;top:6px;left:6px;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:5px;
+  background:rgba(7,13,31,.8);border:1px solid var(--edge2);color:var(--cyan)}
+.slot .tag.or{color:var(--orange)}
+.slot .empty{color:var(--mut2);font-size:11px;text-align:center;padding:8px;line-height:1.5}
+.slot.drag{border-color:var(--cyan);background:rgba(56,189,248,.07)}
+.meta{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin-top:10px;line-height:1.7;
+  border-top:1px solid var(--edge);padding-top:9px}
+.meta b{color:var(--ink);font-weight:500}
+
+/* ---------- validator ---------- */
+.checks{display:grid;gap:6px}
+.check{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;color:var(--mut)}
+.check .st{width:15px;height:15px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+  font-size:9px;border:1px solid var(--edge2);color:var(--mut2)}
+.check.ok .st{background:rgba(52,211,153,.15);border-color:var(--green);color:var(--green)}
+.check.ok{color:var(--ink)}
+.check.bad .st{background:rgba(248,113,113,.15);border-color:var(--red);color:var(--red)}
+.check.bad{color:var(--red)}
+
+/* ---------- console (center) ---------- */
+.qrow{display:flex;gap:10px}
+.qrow input{flex:1;background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:13px 15px;
+  color:var(--ink);font-family:var(--font);font-size:14.5px;outline:none;transition:border-color .15s}
+.qrow input:focus{border-color:var(--cyan)}
+.qrow button{background:linear-gradient(180deg,#31B4F2,#0E86C6);border:none;border-radius:10px;padding:0 22px;
+  color:#04121F;font-family:var(--font);font-weight:700;font-size:14px;cursor:pointer;letter-spacing:.3px}
+.qrow button:disabled{opacity:.45;cursor:not-allowed}
+.qrow button:not(:disabled):hover{filter:brightness(1.1)}
+.samples{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.samples button{font-family:var(--mono);font-size:10.5px;color:var(--mut);background:transparent;border:1px solid var(--edge);
+  border-radius:999px;padding:5px 11px;cursor:pointer;transition:all .15s}
+.samples button:hover{color:var(--cyan);border-color:var(--cyan)}
+
+/* ---------- viewer ---------- */
+.viewer{margin-top:14px;position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--edge);background:#050A18}
+.stage{position:relative;display:grid;grid-template-columns:1fr;min-height:300px}
+.stage:not(.pair) .frame{max-width:640px;width:100%;margin:0 auto}
+.stage.pair{grid-template-columns:1fr 1fr;gap:2px}
+.frame{position:relative;overflow:hidden}
+.frame canvas{width:100%;display:block;image-rendering:auto}
+.frame .ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.frame .lbl{position:absolute;top:8px;left:8px;font-family:var(--mono);font-size:10.5px;color:var(--cyan);
+  background:rgba(5,10,24,.82);border:1px solid var(--edge2);padding:3px 9px;border-radius:5px;z-index:3}
+.frame .lbl.or{color:var(--orange)}
+.scanline{position:absolute;left:0;right:0;height:70px;top:-80px;z-index:2;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(56,189,248,.16) 55%,rgba(56,189,248,.5) 98%,transparent);
+  opacity:0}
+.scanning .scanline{opacity:1;animation:scan 1.5s linear infinite}
+@keyframes scan{from{top:-80px}to{top:105%}}
+.vbar{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--edge);background:var(--panel)}
+.vbar .lt{font-family:var(--mono);font-size:10.5px;color:var(--mut2);margin-right:auto}
+.layerbtn{font-family:var(--mono);font-size:10.5px;padding:4px 10px;border-radius:6px;border:1px solid var(--edge);
+  background:transparent;color:var(--mut);cursor:pointer}
+.layerbtn.on{color:var(--cyan);border-color:var(--cyan);background:rgba(56,189,248,.08)}
+
+/* ---------- answer ---------- */
+.answer{margin-top:14px;display:none}
+.answer.show{display:block;animation:rise .4s ease}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.acard{background:var(--panel);border:1px solid var(--edge);border-left:3px solid var(--cyan);border-radius:12px;padding:16px 18px}
+.acard .task{font-family:var(--mono);font-size:10.5px;color:var(--cyan);letter-spacing:1px;margin-bottom:8px}
+.acard .txt{font-size:15px;line-height:1.65;color:var(--ink)}
+.acard .txt b{color:var(--cyan)}
+.acard .txt .hl{color:var(--orange);font-weight:600}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.stat{background:var(--panel2);border:1px solid var(--edge);border-radius:9px;padding:9px 14px;min-width:106px}
+.stat .v{font-size:21px;font-weight:700;color:var(--ink)}
+.stat .v em{font-style:normal;font-size:12px;color:var(--mut)}
+.stat .k{font-family:var(--mono);font-size:9.5px;color:var(--mut2);letter-spacing:.6px;margin-top:2px}
+.conf{margin-top:14px}
+.conf .row{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:6px}
+.conf .bar{flex:1;height:6px;border-radius:3px;background:var(--panel2);overflow:hidden}
+.conf .fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan-dim),var(--cyan));width:0;transition:width .8s ease}
+.conf .pc{width:44px;text-align:right;color:var(--ink)}
+
+/* ---------- right: agent ---------- */
+.steps{display:grid;gap:0}
+.step{display:flex;gap:11px;padding:9px 0;position:relative}
+.step:not(:last-child)::before{content:"";position:absolute;left:11px;top:32px;bottom:-4px;width:1px;background:var(--edge)}
+.step .n{width:23px;height:23px;border-radius:50%;border:1px solid var(--edge2);display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10px;color:var(--mut2);flex:none;background:var(--panel2);z-index:1}
+.step .t{font-size:12.5px;font-weight:600;color:var(--mut2);padding-top:3px}
+.step small{display:block;font-weight:400;font-family:var(--mono);font-size:10px;color:var(--mut2);margin-top:1px}
+.step.run .n{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 10px rgba(56,189,248,.5)}
+.step.run .t{color:var(--cyan)}
+.step.done .n{background:rgba(56,189,248,.15);border-color:var(--cyan);color:var(--cyan)}
+.step.done .t{color:var(--ink)}
+.registry{display:grid;gap:6px}
+.mod{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;color:var(--mut2);
+  border:1px solid var(--edge);border-radius:7px;padding:7px 10px;background:var(--panel2)}
+.mod .led{width:6px;height:6px;border-radius:50%;background:var(--edge2);flex:none}
+.mod.hot{color:var(--ink);border-color:var(--cyan)}
+.mod.hot .led{background:var(--green);box-shadow:0 0 6px var(--green)}
+.trace{font-family:var(--mono);font-size:10px;line-height:1.75;color:var(--mut);background:#060B1B;border:1px solid var(--edge);
+  border-radius:9px;padding:10px 12px;height:158px;overflow-y:auto;white-space:pre-wrap}
+.trace .tm{color:var(--mut2)}
+.trace .ok{color:var(--green)}
+.trace .cy{color:var(--cyan)}
+.trace .or{color:var(--orange)}
+.trace .er{color:var(--red)}
+.dl{width:100%;margin-top:12px;background:transparent;border:1px solid var(--orange);color:var(--orange);border-radius:9px;
+  padding:11px;font-family:var(--font);font-weight:600;font-size:13px;cursor:pointer;transition:background .15s}
+.dl:hover{background:rgba(249,115,22,.1)}
+.dl:disabled{opacity:.35;cursor:not-allowed}
+
+.foot{text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--mut2);padding:6px 0 20px}
+@media (max-width:1180px){.wrap{grid-template-columns:1fr}.trace{height:120px}}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="mark"><div class="orb"></div><h1>SatQuery <span>AI</span></h1></div>
+  <div class="chip">PS <b>26167</b> · ISRO / SAC</div>
+  <div class="chip" id="modeChip">Mode: <b>—</b></div>
+  <div class="sim"><span class="dot"></span>Prototype · simulated inference · API-ready</div>
+</div>
+
+<div class="wrap">
+
+  <!-- ================= LEFT : INPUTS ================= -->
+  <div>
+    <div class="panel">
+      <div class="phead"><span class="tick"></span>Mission input</div>
+      <div class="pbody">
+        <div class="scen">
+          <button id="sc-single" onclick="loadScenario('single')"><span class="glyph">🛰</span>
+            <span>Single optical scene<small>Sentinel-2 style · VQA / caption / grounding</small></span></button>
+          <button id="sc-temporal" onclick="loadScenario('temporal')"><span class="glyph">⏱</span>
+            <span>Bi-temporal pair<small>Jan 2024 → Jan 2026 · change analysis</small></span></button>
+          <button id="sc-fusion" onclick="loadScenario('fusion')"><span class="glyph">📡</span>
+            <span>Optical–SAR pair<small>Co-registered · joint extraction</small></span></button>
+        </div>
+
+        <div class="slots">
+          <div class="slot" id="slotA" onclick="fileA.click()">
+            <span class="tag" id="tagA">IMAGE A</span>
+            <div class="empty">Click or drop<br>GeoTIFF / TIFF / PNG</div>
+          </div>
+          <div class="slot" id="slotB" onclick="fileB.click()">
+            <span class="tag or" id="tagB">IMAGE B</span>
+            <div class="empty">Optional second image<br>(pair tasks)</div>
+          </div>
+        </div>
+        <input type="file" id="fileA" accept=".tif,.tiff,.png,.jpg,.jpeg" onchange="userUpload(this,'A')">
+        <input type="file" id="fileB" accept=".tif,.tiff,.png,.jpg,.jpeg" onchange="userUpload(this,'B')">
+        <div class="meta" id="metaBox">No imagery loaded.</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div class="phead"><span class="tick"></span>Input validator</div>
+      <div class="pbody checks" id="checks"></div>
+    </div>
+  </div>
+
+  <!-- ================= CENTER : CONSOLE ================= -->
+  <div>
+    <div class="panel">
+      <div class="phead"><span class="tick"></span>Query console</div>
+      <div class="pbody">
+        <div class="qrow">
+          <input id="q" placeholder="Ask the satellite imagery a question…" onkeydown="if(event.key==='Enter')runQuery()">
+          <button id="runBtn" onclick="runQuery()">Analyze</button>
+        </div>
+        <div class="samples" id="samples"></div>
+      </div>
+    </div>
+
+    <div class="viewer" id="viewer">
+      <div class="stage" id="stage">
+        <div class="frame" id="frameA">
+          <span class="lbl" id="lblA">OPTICAL · T1</span>
+          <canvas id="cvA" width="480" height="480"></canvas>
+          <canvas id="ovA" class="ov" width="480" height="480"></canvas>
+          <div class="scanline"></div>
+        </div>
+        <div class="frame" id="frameB" style="display:none">
+          <span class="lbl or" id="lblB">SAR</span>
+          <canvas id="cvB" width="480" height="480"></canvas>
+          <canvas id="ovB" class="ov" width="480" height="480"></canvas>
+          <div class="scanline"></div>
+        </div>
+      </div>
+      <div class="vbar">
+        <span class="lt" id="georef">EPSG:32643 · GSD 10 m · 480×480 px · co-registered ✓</span>
+        <button class="layerbtn on" id="lyEv" onclick="toggleLayer('ev')">Evidence</button>
+        <button class="layerbtn" id="lyGrid" onclick="toggleLayer('grid')">Grid</button>
+      </div>
+    </div>
+
+    <div class="answer" id="answer">
+      <div class="acard">
+        <div class="task" id="aTask"></div>
+        <div class="txt" id="aTxt"></div>
+        <div class="stats" id="aStats"></div>
+        <div class="conf" id="aConf"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RIGHT : AGENT ================= -->
+  <div>
+    <div class="panel">
+      <div class="phead or"><span class="tick"></span>Agentic controller</div>
+      <div class="pbody">
+        <div class="steps" id="steps"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div class="phead or"><span class="tick"></span>Model registry</div>
+      <div class="pbody registry" id="registry"></div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div class="phead or"><span class="tick"></span>Execution trace</div>
+      <div class="pbody">
+        <div class="trace" id="trace"><span class="tm">[--:--:--]</span> controller idle · awaiting query</div>
+        <button class="dl" id="dlBtn" onclick="downloadReport()" disabled>Download analysis report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="foot">SatQuery AI · Smart India Hackathon internal round · frontend prototype — swap <span style="color:var(--cyan)">simulate()</span> for the FastAPI <span style="color:var(--cyan)">/analyze</span> endpoint to go live</div>
+
+<script>
+/* ============================================================
+   SatQuery AI — mission console prototype
+   Scene, statistics and overlays are computed for real in-browser
+   on procedurally generated imagery; model inference is simulated.
+   ============================================================ */
+
+// ---------- seeded RNG + value noise ----------
+let seed=20260831;
+function rnd(){seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff}
+function noiseGrid(n,oct){ // simple fractal value noise on n×n
+  const g=new Float32Array(n*n);
+  for(let o=0;o<oct;o++){
+    const f=1<<o, amp=1/(1<<o), cn=4*f, base=new Float32Array((cn+1)*(cn+1));
+    for(let i=0;i<base.length;i++)base[i]=rnd();
+    for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+      const gx=x/n*cn, gy=y/n*cn, x0=gx|0, y0=gy|0, tx=gx-x0, ty=gy-y0;
+      const sx=tx*tx*(3-2*tx), sy=ty*ty*(3-2*ty);
+      const a=base[y0*(cn+1)+x0], b=base[y0*(cn+1)+x0+1], c=base[(y0+1)*(cn+1)+x0], d=base[(y0+1)*(cn+1)+x0+1];
+      g[y*n+x]+=amp*((a*(1-sx)+b*sx)*(1-sy)+(c*(1-sx)+d*sx)*sy);
+    }
+  }
+  let amp=0;for(let o=0;o<oct;o++)amp+=1/(1<<o);
+  for(let i=0;i<g.length;i++)g[i]/=amp;
+  return g;
+}
+
+// ---------- scene generation (class grids) ----------
+const N=96, PX=5, S=N*PX;           // 96×96 cells → 480px
+const W=0,VEG=1,CROP=2,BARE=3,URB=4,ROAD=5;
+let scene=null;
+
+function genScene(){
+  seed=20260831;
+  const elev=noiseGrid(N,4), moist=noiseGrid(N,3);
+  const t1=new Uint8Array(N*N);
+  // base landcover
+  for(let i=0;i<N*N;i++){
+    t1[i]= elev[i]>0.64?BARE : VEG;
+  }
+  // river: wandering path top→bottom
+  let rx=N*0.42;
+  for(let y=0;y<N;y++){
+    rx+=Math.sin(y*0.16)*0.9+(rnd()-0.5)*1.4; rx=Math.max(8,Math.min(N-8,rx));
+    const wdt=2+Math.round(Math.sin(y*0.09)+1);
+    for(let dx=-wdt;dx<=wdt;dx++)t1[y*N+Math.round(rx)+dx]=W;
+  }
+  // lake in low-elevation pocket (right-bottom)
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const dx=(x-N*0.78)/9,dy=(y-N*0.8)/6.5;
+    if(dx*dx+dy*dy<1+ (noiseGrid?0:0)+ (rnd()*0)) {}
+  }
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const dx=(x-N*0.78)/9.5,dy=(y-N*0.8)/7;
+    if(dx*dx+dy*dy<1)t1[y*N+x]=W;
+  }
+  // cropland strips (upper-right quadrant)
+  for(let y=6;y<N*0.42;y++)for(let x=N*0.58;x<N-4;x++){
+    if(t1[y*N+(x|0)]!==W)t1[y*N+(x|0)]=CROP;
+  }
+  // urban seed left of river, mid — BFS growth
+  const urbSeed=[(N*0.5|0)*N+(N*0.26|0)];
+  const target=Math.round(N*N*0.085);
+  let frontier=[...urbSeed], placed=0;
+  while(placed<target&&frontier.length){
+    const idx=frontier.splice((rnd()*frontier.length)|0,1)[0];
+    if(t1[idx]===URB||t1[idx]===W)continue;
+    t1[idx]=URB;placed++;
+    const x=idx%N,y=(idx/N)|0;
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{
+      const nx=x+dx,ny=y+dy;
+      if(nx>1&&nx<N-1&&ny>1&&ny<N-1&&rnd()<0.62)frontier.push(ny*N+nx);
+    });
+  }
+  // roads through urban extent
+  let minx=N,maxx=0,miny=N,maxy=0;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(t1[y*N+x]===URB){minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y)}
+  for(let x=minx;x<=maxx;x++){const y=((miny+maxy)/2)|0;if(t1[y*N+x]===URB)t1[y*N+x]=ROAD}
+  for(let y=miny;y<=maxy;y++){const x=((minx+maxx)/2)|0;if(t1[y*N+x]===URB)t1[y*N+x]=ROAD}
+
+  // T2: urban growth + slight lake shrink
+  const t2=Uint8Array.from(t1), changed=new Uint8Array(N*N);
+  let grow=Math.round(placed*0.45), guard=0;
+  while(grow>0&&guard++<40000){
+    const i=(rnd()*N*N)|0;
+    if(t2[i]===URB||t2[i]===ROAD){
+      const x=i%N,y=(i/N)|0,d=[[1,0],[-1,0],[0,1],[0,-1]][(rnd()*4)|0];
+      const j=(y+d[1])*N+(x+d[0]);
+      if(j>=0&&j<N*N&&(t2[j]===VEG||t2[j]===BARE||t2[j]===CROP)){t2[j]=URB;changed[j]=1;grow--}
+    }
+  }
+  // lake shrink → bare shoreline (drought signal)
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const i=y*N+x, dx=(x-N*0.78)/9.5,dy=(y-N*0.8)/7, r=dx*dx+dy*dy;
+    if(t1[i]===W&&r>0.72&&r<1&&x>N*0.7){t2[i]=BARE;changed[i]=2}
+  }
+  scene={t1,t2,changed};
+}
+
+// ---------- stats from grids ----------
+function stats(grid){
+  const c=[0,0,0,0,0,0];for(let i=0;i<N*N;i++)c[grid[i]]++;
+  const tot=N*N, kmPerCell=(PX*10/1000)**2; // 10m GSD → cell=50m → 0.0025 km²
+  return {
+    waterPct:(100*c[W]/tot), vegPct:(100*c[VEG]/tot), cropPct:(100*c[CROP]/tot),
+    barePct:(100*c[BARE]/tot), urbPct:(100*(c[URB]+c[ROAD])/tot),
+    urbKm:( (c[URB]+c[ROAD])*kmPerCell), waterKm:(c[W]*kmPerCell), km:kmPerCell
+  };
+}
+function bboxOf(pred,grid){
+  let minx=N,maxx=-1,miny=N,maxy=-1;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(pred(grid[y*N+x],y*N+x)){minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y)}
+  return maxx<0?null:{x:minx*PX,y:miny*PX,w:(maxx-minx+1)*PX,h:(maxy-miny+1)*PX};
+}
+
+// ---------- renderers ----------
+function renderOptical(ctx,grid){
+  const img=ctx.createImageData(S,S);const d=img.data;
+  const pal={
+    [W]:[18,62,94],[VEG]:[47,93,52],[CROP]:[124,154,78],[BARE]:[138,122,94],[URB]:[154,160,168],[ROAD]:[58,62,70]
+  };
+  for(let y=0;y<S;y++)for(let x=0;x<S;x++){
+    const g=grid[((y/PX)|0)*N+((x/PX)|0)];let[r,gr,b]=pal[g];
+    const n=(rnd()-0.5)*(g===W?14:g===URB?30:24);
+    // crop strip texture
+    if(g===CROP&&(((x/PX)|0)%6<3)){r=194;gr=178;b=107}
+    // water depth shimmer
+    if(g===W){b+=Math.sin(x*0.08+y*0.05)*8}
+    const i=(y*S+x)*4;
+    d[i]=Math.max(0,Math.min(255,r+n));d[i+1]=Math.max(0,Math.min(255,gr+n));d[i+2]=Math.max(0,Math.min(255,b+n));d[i+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+  // atmospheric haze
+  const gr2=ctx.createLinearGradient(0,0,S,S);gr2.addColorStop(0,'rgba(150,190,230,0.06)');gr2.addColorStop(1,'rgba(0,0,30,0.10)');
+  ctx.fillStyle=gr2;ctx.fillRect(0,0,S,S);
+}
+function renderSAR(ctx,grid){
+  const img=ctx.createImageData(S,S);const d=img.data;
+  const base={[W]:14,[VEG]:72,[CROP]:92,[BARE]:112,[URB]:196,[ROAD]:40};
+  for(let y=0;y<S;y++)for(let x=0;x<S;x++){
+    const g=grid[((y/PX)|0)*N+((x/PX)|0)];
+    let v=base[g]*(0.55+rnd()*0.9);            // multiplicative speckle
+    if(g===URB&&rnd()<0.06)v=255;              // corner-reflector glints
+    if(g===CROP&&(((y/PX)|0)%5<2))v*=0.8;      // row anisotropy
+    v=Math.max(0,Math.min(255,v));
+    const i=(y*S+x)*4;d[i]=v;d[i+1]=v;d[i+2]=v;d[i+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+}
+
+// ---------- overlays ----------
+function clearOv(){['ovA','ovB'].forEach(id=>{const c=document.getElementById(id);c.getContext('2d').clearRect(0,0,S,S)})}
+function drawMask(ctx,pred,grid,color){
+  ctx.fillStyle=color;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(pred(grid[y*N+x],y*N+x))ctx.fillRect(x*PX,y*PX,PX,PX);
+}
+function drawBox(ctx,b,color,label){
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash([7,4]);ctx.strokeRect(b.x,b.y,b.w,b.h);ctx.setLineDash([]);
+  ctx.fillStyle='rgba(5,10,24,0.85)';const tw=ctx.measureText(label).width+14;
+  ctx.fillRect(b.x,Math.max(0,b.y-20),tw,18);
+  ctx.fillStyle=color;ctx.font='11px IBM Plex Mono';ctx.fillText(label,b.x+7,Math.max(12,b.y-7));
+}
+function drawGrid(ctx){
+  ctx.strokeStyle='rgba(56,189,248,0.14)';ctx.lineWidth=1;
+  for(let i=0;i<=S;i+=60){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,S);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(S,i);ctx.stroke()}
+}
+
+// ---------- app state ----------
+let mode=null, lastResult=null, layers={ev:true,grid:false};
+const $=id=>document.getElementById(id);
+const stepsDef=[
+  ['Interpret query','LLM parse → task class'],
+  ['Validate inputs','count · modality · CRS · co-reg'],
+  ['Select models','registry lookup + params'],
+  ['Execute workflow','specialist inference'],
+  ['Integrate outputs','fuse text + spatial · confidence'],
+];
+const registryDef=[
+  ['rsvqa-lora-v2','RS-VQA · Qwen2.5-VL-7B + LoRA'],
+  ['geocap-ground-v1','Caption + grounding head'],
+  ['changeformer-cdvqa','Bi-temporal change-VQA'],
+  ['sarfusion-net-v1','Optical–SAR joint extraction'],
+];
+function buildStatic(){
+  $('steps').innerHTML=stepsDef.map((s,i)=>`<div class="step" id="st${i}"><div class="n">${i+1}</div><div class="t">${s[0]}<small>${s[1]}</small></div></div>`).join('');
+  $('registry').innerHTML=registryDef.map((m,i)=>`<div class="mod" id="mod${i}"><span class="led"></span>${m[0]}<span style="margin-left:auto;color:var(--mut2)">${m[1].split('·')[0]}</span></div>`).join('');
+}
+const SAMPLES={
+  single:[ 'Describe the land-cover and major objects visible in this image.',
+           'Highlight the water body referred to in the query.',
+           'What fraction of this scene is cropland?' ],
+  temporal:[ 'What changed between these two dates, and where did the change occur?',
+             'Has the built-up area increased, decreased, or remained unchanged?' ],
+  fusion:[ 'Use the optical and SAR images together to identify built-up and water-covered regions.',
+           'Which regions does SAR confirm as water despite optical ambiguity?' ],
+};
+
+// ---------- scenario loading ----------
+function loadScenario(m){
+  mode=m;genScene();
+  ['single','temporal','fusion'].forEach(s=>$('sc-'+s).classList.toggle('active',s===m));
+  $('modeChip').innerHTML='Mode: <b>'+(m==='single'?'Single image':m==='temporal'?'Bi-temporal pair':'Optical–SAR pair')+'</b>';
+  // slots preview
+  const pv=(slot,draw,tag,cls)=>{ const el=$(slot);el.innerHTML=`<span class="tag ${cls||''}">${tag}</span>`;
+    const c=document.createElement('canvas');c.width=S;c.height=S;draw(c.getContext('2d'));el.appendChild(c);};
+  pv('slotA',ctx=>renderOptical(ctx,scene.t1),'A · OPTICAL'+(m==='temporal'?' T1':''));
+  if(m==='single'){ $('slotB').innerHTML='<span class="tag or">IMAGE B</span><div class="empty">Not required<br>for single-image tasks</div>'; }
+  else if(m==='temporal'){ pv('slotB',ctx=>renderOptical(ctx,scene.t2),'B · OPTICAL T2','or'); }
+  else { pv('slotB',ctx=>renderSAR(ctx,scene.t1),'B · SAR (C-band)','or'); }
+  // main stage
+  renderOptical($('cvA').getContext('2d'),scene.t1);
+  $('lblA').textContent = m==='temporal'?'OPTICAL · T1 · JAN 2024':'OPTICAL · SENTINEL-2 STYLE';
+  if(m==='single'){$('stage').classList.remove('pair');$('frameB').style.display='none';}
+  else{$('stage').classList.add('pair');$('frameB').style.display='block';
+    if(m==='temporal'){renderOptical($('cvB').getContext('2d'),scene.t2);$('lblB').textContent='OPTICAL · T2 · JAN 2026';}
+    else{renderSAR($('cvB').getContext('2d'),scene.t1);$('lblB').textContent='SAR · VV · RISAT STYLE';}
+  }
+  clearOv();$('answer').classList.remove('show');
+  $('metaBox').innerHTML =
+    `<b>Image A</b> GeoTIFF · 3-band optical · 480×480 · EPSG:32643 · GSD 10 m<br>`+
+    (m==='single'?'<b>Image B</b> —'
+     :m==='temporal'?'<b>Image B</b> GeoTIFF · optical T2 · same footprint · Δt = 24 months'
+     :'<b>Image B</b> GeoTIFF · SAR VV amplitude · co-registered · RMSE 0.4 px');
+  $('samples').innerHTML=SAMPLES[m].map(q=>`<button onclick="$('q').value=this.textContent">${q}</button>`).join('');
+  runChecks();
+  resetAgent();
+  log('scenario loaded · '+m,'cy');
+}
+function runChecks(){
+  const items=[
+    ['Image count matches task family', true],
+    ['Format accepted (GeoTIFF/TIFF)', true],
+    ['Modality identified '+(mode==='fusion'?'(optical + SAR)':'(optical)'), true],
+    ['CRS & footprint aligned', true],
+    [mode==='fusion'?'Co-registration RMSE < 0.5 px':'Radiometric range valid', true],
+  ];
+  $('checks').innerHTML=items.map(([t,ok])=>`<div class="check ${ok?'ok':'bad'}"><span class="st">${ok?'✓':'✕'}</span>${t}</div>`).join('');
+}
+
+// ---------- uploads (bonus realism) ----------
+function userUpload(inp,which){
+  const f=inp.files[0];if(!f)return;
+  const slot=$('slot'+which);
+  const isTiff=/\.tiff?$/i.test(f.name);
+  if(isTiff){
+    slot.innerHTML=`<span class="tag ${which==='B'?'or':''}">${which} · ${f.name.slice(0,14)}</span>
+      <div class="empty">GeoTIFF accepted ✓<br>${(f.size/1024).toFixed(0)} KB · parsed header<br>preview via backend renderer</div>`;
+    log(`upload ${f.name} · TIFF header parsed · ${(f.size/1024).toFixed(0)} KB`,'cy');
+  }else{
+    const r=new FileReader();
+    r.onload=e=>{slot.innerHTML=`<span class="tag ${which==='B'?'or':''}">${which} · UPLOAD</span><img src="${e.target.result}">`;};
+    r.readAsDataURL(f);
+    log(`upload ${f.name} · benchmark format accepted`,'cy');
+  }
+}
+
+// ---------- agent ----------
+function resetAgent(){
+  for(let i=0;i<5;i++){$('st'+i).className='step'}
+  for(let i=0;i<4;i++){$('mod'+i).className='mod'}
+}
+function log(msg,cls){
+  const t=new Date().toTimeString().slice(0,8);
+  $('trace').innerHTML+=`\n<span class="tm">[${t}]</span> <span class="${cls||''}">${msg}</span>`;
+  $('trace').scrollTop=1e6;
+}
+function classify(q){
+  q=q.toLowerCase();
+  if(/(chang|differ|increas|decreas|between.*date|grew|new build)/.test(q))return 'change';
+  if(/(both|together|fusion|sar and|optical and|combine|confirm)/.test(q))return 'fusion';
+  if(/(highlight|locate|where is|point|ground|mark|show the)/.test(q))return 'ground';
+  if(/(describe|caption|summar|overview|scene)/.test(q))return 'caption';
+  return 'vqa';
+}
+const TASKMETA={
+  vqa:    {name:'SINGLE-IMAGE VQA',            mod:0, needs:'any'},
+  caption:{name:'CAPTIONING / SCENE DESCRIPTION',mod:1, needs:'any'},
+  ground: {name:'TEXT-GUIDED REGION GROUNDING', mod:1, needs:'any'},
+  change: {name:'CHANGE-BASED VQA',             mod:2, needs:'temporal'},
+  fusion: {name:'OPTICAL–SAR JOINT EXTRACTION', mod:3, needs:'fusion'},
+};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function runQuery(){
+  const q=$('q').value.trim();
+  if(!mode){log('no scenario loaded — select a mission input','er');return}
+  if(!q){log('empty query','er');return}
+  $('runBtn').disabled=true;clearOv();$('answer').classList.remove('show');resetAgent();
+  const task=classify(q), meta=TASKMETA[task];
+  log('query received: "'+q.slice(0,60)+(q.length>60?'…':'')+'"');
+
+  // step 1 interpret
+  $('st0').className='step run';await sleep(500);
+  log('task classified → '+meta.name,'cy');$('st0').className='step done';
+
+  // step 2 validate — includes compatibility rejection (PS requirement)
+  $('st1').className='step run';await sleep(500);
+  if(meta.needs!=='any'&&meta.needs!==mode){
+    log('VALIDATION FAILED: '+meta.name+' requires '+(meta.needs==='temporal'?'a bi-temporal pair':'an optical–SAR pair'),'er');
+    log('suggestion: load the matching scenario and retry','or');
+    $('st1').className='step';$('runBtn').disabled=false;
+    $('aTask').textContent='INPUT CONFIGURATION INCOMPATIBLE';
+    $('aTxt').innerHTML='This task needs '+(meta.needs==='temporal'?'<b>two images of the same area at different times</b>':'<b>a co-registered optical + SAR pair</b>')+'. The validator rejected execution — no model was run. Load the matching mission input on the left and ask again.';
+    $('aStats').innerHTML='';$('aConf').innerHTML='';
+    $('answer').classList.add('show');return;
+  }
+  log('inputs valid · '+(mode==='single'?'1 image':'2 images')+' · CRS aligned','ok');$('st1').className='step done';
+
+  // step 3 select
+  $('st2').className='step run';await sleep(550);
+  $('mod'+meta.mod).className='mod hot';
+  const modelName=registryDef[meta.mod][0];
+  const params = task==='change'?'Δt=24mo · tile=256 · thresh=0.35'
+              : task==='fusion'?'bands=B2,B3,B4+VV · fuse=late'
+              : task==='ground'?'query-emb=text · iou-nms=0.5'
+              : 'temp=0.2 · max_tok=256 · tiles=4';
+  log('selected '+modelName+' · params: '+params,'cy');$('st2').className='step done';
+
+  // step 4 execute (scanline)
+  $('st3').className='step run';
+  $('frameA').classList.add('scanning');if(mode!=='single')$('frameB').classList.add('scanning');
+  await sleep(1600);
+  $('frameA').classList.remove('scanning');$('frameB').classList.remove('scanning');
+  log('inference complete · latency 1.6 s (simulated)','ok');$('st3').className='step done';
+
+  // step 5 integrate + render result
+  $('st4').className='step run';await sleep(450);
+  const res=buildResult(task,q);lastResult=res;
+  paintEvidence(res);renderAnswer(res);
+  log('outputs integrated · confidence '+(res.conf*100).toFixed(0)+'%','ok');
+  log('trace: task='+task+' model='+modelName+' params=['+params+']');
+  $('st4').className='step done';$('dlBtn').disabled=false;$('runBtn').disabled=false;
+  res.model=modelName;res.params=params;
+}
+
+// ---------- result construction (real computed stats) ----------
+function buildResult(task,q){
+  const s1=stats(scene.t1), s2=stats(scene.t2);
+  const r={task,q,conf:0.86+rnd()*0.08,s1,s2};
+  if(task==='caption'){
+    r.text=`The scene shows a <b>riverine agricultural landscape</b>. A meandering river crosses the frame north–south, joined by a lake in the south-east. Vegetation and forest cover <b>${s1.vegPct.toFixed(1)}%</b> of the area, strip-cultivated cropland <b>${s1.cropPct.toFixed(1)}%</b> in the north-east, and a <b>built-up settlement (${s1.urbPct.toFixed(1)}%)</b> with a road grid sits west of the river. Bare/exposed soil occupies <b>${s1.barePct.toFixed(1)}%</b>.`;
+    r.stats=[[s1.vegPct.toFixed(1)+'%','VEGETATION'],[s1.cropPct.toFixed(1)+'%','CROPLAND'],[s1.urbPct.toFixed(1)+'%','BUILT-UP'],[s1.waterPct.toFixed(1)+'%','WATER']];
+  }
+  else if(task==='ground'){
+    r.text=`The referred <b>water body</b> is localised and highlighted. The dominant hydrological feature is the meandering river with a connected lake in the south-east; total water cover is <b>${s1.waterPct.toFixed(1)}%</b> (~<span class="hl">${s1.waterKm.toFixed(2)} km²</span> at 10 m GSD). Bounding geometry and pixel mask are drawn on the evidence layer.`;
+    r.stats=[[s1.waterPct.toFixed(1)+'%','WATER COVER'],[s1.waterKm.toFixed(2)+' <em>km²</em>','AREA'],['1','REGIONS'],['0.91','MASK IoU*']];
+  }
+  else if(task==='change'){
+    let nUrb=0,nDry=0;for(let i=0;i<N*N;i++){if(scene.changed[i]===1)nUrb++;if(scene.changed[i]===2)nDry++}
+    const urbKm=nUrb*s1.km,dryKm=nDry*s1.km, growth=100*(s2.urbPct-s1.urbPct)/s1.urbPct;
+    r.text=`Between the two dates the <b>built-up area increased</b> by <span class="hl">${growth.toFixed(1)}%</span> (+${urbKm.toFixed(2)} km²), concentrated on the <b>eastern and southern fringe of the settlement</b>, expanding into former vegetation and cropland. The lake also <b>receded along its eastern shore</b> (−${dryKm.toFixed(2)} km² of surface water). Changed pixels are shown as the orange evidence layer on both dates.`;
+    r.stats=[['+'+growth.toFixed(1)+'%','BUILT-UP GROWTH'],['+'+urbKm.toFixed(2)+' <em>km²</em>','NEW CONSTRUCTION'],['−'+dryKm.toFixed(2)+' <em>km²</em>','WATER LOSS'],['24 <em>mo</em>','INTERVAL']];
+  }
+  else if(task==='fusion'){
+    r.text=`Joint optical–SAR extraction complete. <b>Built-up regions</b> (bright, stable SAR backscatter + grey optical texture) cover <b>${s1.urbPct.toFixed(1)}%</b> — highlighted orange. <b>Water</b> (near-zero VV backscatter confirming dark optical tone) covers <b>${s1.waterPct.toFixed(1)}%</b> — highlighted cyan. SAR resolves <span class="hl">optical ambiguity</span> between wet soil and open water along the river margins; cross-modal agreement is 94%.`;
+    r.stats=[[s1.urbPct.toFixed(1)+'%','BUILT-UP'],[s1.waterPct.toFixed(1)+'%','WATER'],['94%','MODAL AGREEMENT'],['VV','SAR POL.']];
+  }
+  else{ // vqa — answer keyed to query content
+    const ql=q.toLowerCase();
+    if(/crop/.test(ql)) r.text=`Cropland occupies <b>${s1.cropPct.toFixed(1)}%</b> of the scene (~${(s1.cropPct/100*N*N*s1.km).toFixed(2)} km²), arranged in cultivation strips in the north-east quadrant.`;
+    else if(/water|river|lake/.test(ql)) r.text=`Yes — surface water is present: a meandering river and a south-eastern lake totalling <b>${s1.waterPct.toFixed(1)}%</b> of the scene (~${s1.waterKm.toFixed(2)} km²).`;
+    else if(/urban|built|settle|city/.test(ql)) r.text=`A <b>built-up settlement</b> covering ${s1.urbPct.toFixed(1)}% (~${s1.urbKm.toFixed(2)} km²) lies west of the river, structured by a cross-shaped primary road grid.`;
+    else r.text=`Analysis of the scene: vegetation <b>${s1.vegPct.toFixed(1)}%</b>, cropland <b>${s1.cropPct.toFixed(1)}%</b>, built-up <b>${s1.urbPct.toFixed(1)}%</b>, water <b>${s1.waterPct.toFixed(1)}%</b>, bare soil <b>${s1.barePct.toFixed(1)}%</b>. The dominant structures are the north–south river corridor and the western settlement.`;
+    r.stats=[[s1.vegPct.toFixed(1)+'%','VEGETATION'],[s1.cropPct.toFixed(1)+'%','CROPLAND'],[s1.urbPct.toFixed(1)+'%','BUILT-UP'],[s1.waterPct.toFixed(1)+'%','WATER']];
+  }
+  return r;
+}
+
+// ---------- evidence painting ----------
+function paintEvidence(r){
+  if(!layers.ev)return;
+  const a=$('ovA').getContext('2d'), b=$('ovB').getContext('2d');
+  a.clearRect(0,0,S,S);b.clearRect(0,0,S,S);
+  if(r.task==='ground'){
+    drawMask(a,g=>g===W,scene.t1,'rgba(56,189,248,0.55)');
+    const bb=bboxOf(g=>g===W,scene.t1);if(bb)drawBox(a,bb,'#38BDF8','water body · conf 0.91');
+  }
+  if(r.task==='change'){
+    drawMask(a,(g,i)=>scene.changed[i]>0,scene.t1,'rgba(249,115,22,0.45)');
+    drawMask(b,(g,i)=>scene.changed[i]>0,scene.t2,'rgba(249,115,22,0.45)');
+    const bb=bboxOf((g,i)=>scene.changed[i]===1,scene.t2);if(bb)drawBox(b,bb,'#F97316','new built-up · Δ24mo');
+  }
+  if(r.task==='fusion'){
+    [[a,scene.t1],[b,scene.t1]].forEach(([ctx,g])=>{
+      drawMask(ctx,v=>v===URB||v===ROAD,g,'rgba(249,115,22,0.42)');
+      drawMask(ctx,v=>v===W,g,'rgba(56,189,248,0.42)');
+    });
+  }
+  if(layers.grid){drawGrid(a);if(mode!=='single')drawGrid(b)}
+}
+function toggleLayer(k){
+  layers[k]=!layers[k];$( k==='ev'?'lyEv':'lyGrid').classList.toggle('on',layers[k]);
+  clearOv();if(lastResult)paintEvidence(lastResult);else if(layers.grid){drawGrid($('ovA').getContext('2d'));if(mode!=='single')drawGrid($('ovB').getContext('2d'))}
+}
+
+// ---------- answer card ----------
+function renderAnswer(r){
+  $('aTask').textContent='TASK · '+TASKMETA[r.task].name+' · MODEL · '+registryDef[TASKMETA[r.task].mod][0].toUpperCase();
+  $('aTxt').innerHTML=r.text;
+  $('aStats').innerHTML=r.stats.map(([v,k])=>`<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+  const rows=[['answer confidence',r.conf],['spatial evidence',r.conf-0.05+rnd()*0.06],['input validation',0.99]];
+  $('aConf').innerHTML=rows.map(([k,v])=>`<div class="row"><span style="width:132px">${k}</span><div class="bar"><div class="fill" data-w="${(v*100).toFixed(0)}"></div></div><span class="pc">${(v*100).toFixed(0)}%</span></div>`).join('');
+  $('answer').classList.add('show');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    document.querySelectorAll('.conf .fill').forEach(f=>f.style.width=f.dataset.w+'%');
+  }));
+}
+
+// ---------- report ----------
+function downloadReport(){
+  if(!lastResult)return;
+  const r=lastResult, ts=new Date().toISOString();
+  const imgA=$('cvA').toDataURL(), evA=$('ovA').toDataURL();
+  const html=`<!DOCTYPE html><html><head><meta charset="utf8"><title>SatQuery AI report</title>
+  <style>body{font-family:system-ui;max-width:820px;margin:40px auto;color:#111;line-height:1.6}
+  h1{font-size:22px}code{background:#eef;padding:2px 6px;border-radius:4px}
+  .img{position:relative;display:inline-block}.img img{width:390px;border-radius:8px}
+  .img img.ov{position:absolute;left:0;top:0}table{border-collapse:collapse;margin:14px 0}
+  td,th{border:1px solid #ccd;padding:6px 12px;font-size:13px;text-align:left}</style></head><body>
+  <h1>SatQuery AI — Analysis Report</h1>
+  <p><b>Generated:</b> ${ts}<br><b>Problem statement:</b> 26167 (ISRO/SAC)<br><b>Mode:</b> ${mode}</p>
+  <table><tr><th>Query</th><td>${r.q}</td></tr>
+  <tr><th>Task</th><td>${TASKMETA[r.task].name}</td></tr>
+  <tr><th>Model</th><td><code>${r.model||''}</code></td></tr>
+  <tr><th>Parameters</th><td><code>${r.params||''}</code></td></tr>
+  <tr><th>Confidence</th><td>${(r.conf*100).toFixed(0)}%</td></tr></table>
+  <h3>Answer</h3><p>${r.text}</p>
+  <h3>Visual evidence</h3><div class="img"><img src="${imgA}"><img class="ov" src="${evA}"></div>
+  <h3>Execution trace</h3><pre style="background:#f4f6fb;padding:14px;border-radius:8px;font-size:12px">${$('trace').innerText}</pre>
+  <p style="color:#888;font-size:12px">Prototype report — simulated inference on procedurally generated imagery; statistics computed from the scene class map.</p>
+  </body></html>`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download='SatQuery_AI_report.html';a.click();
+  log('report downloaded','or');
+}
+
+// ---------- boot ----------
+buildStatic();
+loadScenario('single');
+</script>
+</body>
+</html>
