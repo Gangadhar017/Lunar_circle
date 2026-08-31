@@ -1,0 +1,68 @@
+:root {
+  --bg-base: #121212;
+  --bg-panel: #1C1C1C;
+  --bg-sheet: #121212;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A1A1AA;
+  --text-disabled: #52525B;
+
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-focus: #FFFFFF;
+
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --radius-panel: 4px;
+  --radius-pill: 2px;
+
+  --shadow-panel: 0 8px 32px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.2);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Customizing Leaflet to match the dark workspace theme */
+.leaflet-container {
+  background: var(--bg-base);
+}
+
+.leaflet-control-container .leaflet-control {
+  border: none;
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+  background: var(--bg-panel);
+}
+
+.leaflet-bar a {
+  background-color: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.leaflet-bar a:first-child {
+  border-top-left-radius: var(--radius-panel) !important;
+  border-top-right-radius: var(--radius-panel) !important;
+}
+
+.leaflet-bar a:last-child {
+  border-bottom: none !important;
+  border-bottom-left-radius: var(--radius-panel) !important;
+  border-bottom-right-radius: var(--radius-panel) !important;
+}

@@ -3,11 +3,10 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # API-only dependencies (rasterio wheels bundle GDAL — no apt packages needed)
-COPY requirements-api.txt .
-RUN pip install --no-cache-dir -r requirements-api.txt
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ src/
-COPY demo/ demo/
+COPY backend/src/ src/
 
 # Render/HF Spaces inject PORT; default 8000 for local runs
 ENV PORT=8000
