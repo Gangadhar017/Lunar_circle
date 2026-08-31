@@ -13,6 +13,9 @@ class Specialist(ABC):
     weights_path: str | None = None  # set once fine-tuned checkpoints exist
 
     def __call__(self, query, images, params):
+        if params.get("demo_mode"):
+            from src.satquery.demo.adapter import DemoAdapter
+            return DemoAdapter.run(self.__class__.__name__, query, images, params)
         return self._infer(query=query, images=images, params=params)
 
     @abstractmethod

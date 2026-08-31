@@ -23,7 +23,10 @@ from .models.fusion import OpticalSARFusionModel
 class ModelResult:
     answer: str
     confidence: float
+    summary: str = ""
+    observations: dict[str, Any] = field(default_factory=dict)
     evidence: dict[str, Any] = field(default_factory=dict)
+    demo_metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
