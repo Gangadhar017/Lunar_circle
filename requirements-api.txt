@@ -1,0 +1,7 @@
+# lightweight deps for the deployed API (no ML weights on free tier)
+fastapi
+uvicorn[standard]
+python-multipart
+rasterio
+numpy
+pillow

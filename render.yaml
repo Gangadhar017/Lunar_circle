@@ -1,0 +1,8 @@
+# One-click Render blueprint: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: satquery-ai
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true

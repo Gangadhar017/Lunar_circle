@@ -1,0 +1,9 @@
+.git
+data/
+checkpoints/
+docs/
+*.pptx
+*.png
+*.jpg
+__pycache__/
+.venv/
