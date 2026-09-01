@@ -72,3 +72,9 @@ async def analyze(query: str = Form(...),
     except NotTrainedYet as e:
         return {"ok": False, "answer": str(e),
                 "execution_summary": {"error": "weights_not_attached"}}
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("src.api.main:app", host="0.0.0.0", port=port, reload=False)
