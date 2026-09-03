@@ -31,9 +31,11 @@ export const QuerySurface: React.FC<QuerySurfaceProps> = ({
   
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevQueryRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    if (externalQuery) {
+    if (externalQuery && externalQuery !== prevQueryRef.current) {
+      prevQueryRef.current = externalQuery;
       setQuery(externalQuery);
       setMode('active');
     }

@@ -167,6 +167,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       map.remove();
       mapInstanceRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run ONLY once on mount to prevent unnecessary tile reloads
 
   // Handle Layer Visibility Toggles
