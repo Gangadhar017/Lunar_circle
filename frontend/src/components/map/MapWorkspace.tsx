@@ -63,13 +63,14 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     // Read the API key from environment variables (checking both potential variable names)
     const apiKey = import.meta.env.VITE_CARTO_API_KEY || import.meta.env.VITE_MAPBOX_TOKEN || '';
     
-    // CARTO basemap URL — only append key parameter if an API key is actually set
+    // Default to free Esri Dark Canvas basemap (no key required), or CARTO if API key is supplied
     const tileUrl = apiKey 
       ? `https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png?key=${apiKey}`
-      : `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png`;
+      : `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`;
     
     const tileLayer = L.tileLayer(tileUrl, {
       maxZoom: 18,
+      attribution: apiKey ? '&copy; CARTO' : '&copy; Esri',
       noWrap: true, // Prevents loading tiles outside the standard world bounds
       keepBuffer: 2 // Retains nearby tiles to prevent reloading when panning back
     }).addTo(map);
