@@ -9,13 +9,14 @@ from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
+import json
 
 from src.satquery import controller
 from src.satquery.models.base import NotTrainedYet
-import json
+from src.satquery.report_generator import generate_html_report
 
-app = FastAPI(title="SatQuery AI", version="0.1.0",
+app = FastAPI(title="SatQuery AI", version="0.2.0",
               description="Agentic vision-language assistant for multimodal remote sensing (PS 26167)")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -26,13 +27,74 @@ def frontend():
         "service": "SatQuery AI", 
         "docs": "/docs", 
         "health": "/health",
-        "frontend": "Please access the React frontend at port 5173."
+        "presets": "/presets",
+        "frontend": "Please access the React frontend at https://gangadhar017.github.io/Lunar_circle/"
     })
 
 
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
+
+
+@app.get("/presets")
+def get_presets() -> dict:
+    """Returns the 4 curated judge benchmark demonstration presets for ISRO / SAC PS 26167."""
+    return {
+        "presets": [
+            {
+                "id": "urban_change",
+                "title": "Bi-Temporal Urban Expansion",
+                "subtitle": "Change-VQA & Mask Extraction",
+                "query": "Detect changes between these two dates and estimate newly developed regions",
+                "task": "change",
+                "lat": 38.0413,
+                "lng": -97.9189,
+                "zoom": 14,
+                "images": ["before.jpg", "after.jpg"]
+            },
+            {
+                "id": "sar_optical_fusion",
+                "title": "Flood Assessment (Optical + SAR)",
+                "subtitle": "Cloud-Penetrating Structural Fusion",
+                "query": "Use the optical and SAR images together to identify built-up and water-covered regions",
+                "task": "fusion",
+                "lat": 23.0225,
+                "lng": 72.5714,
+                "zoom": 13,
+                "images": ["optical.jpg", "sar.jpg"]
+            },
+            {
+                "id": "water_grounding",
+                "title": "Water Resource Grounding",
+                "subtitle": "Single-Image Referring Expression Grounding",
+                "query": "Highlight the major water body and reservoir boundaries referred to in the query",
+                "task": "ground",
+                "lat": 23.0526,
+                "lng": 72.5208,
+                "zoom": 13,
+                "images": ["optical.jpg"]
+            },
+            {
+                "id": "scene_vqa",
+                "title": "Land-Cover Description & VQA",
+                "subtitle": "Multispectral Scene Understanding",
+                "query": "Describe the land-cover distribution and major infrastructure visible in this scene",
+                "task": "caption",
+                "lat": 23.0179,
+                "lng": 72.5389,
+                "zoom": 13,
+                "images": ["optical.jpg"]
+            }
+        ]
+    }
+
+
+@app.post("/report", response_class=HTMLResponse)
+async def create_report(payload: dict) -> HTMLResponse:
+    """Generates an ISRO / SAC PS 26167 compliant printable Mission Intelligence Briefing."""
+    html = generate_html_report(payload)
+    return HTMLResponse(content=html)
 
 
 @app.post("/analyze")

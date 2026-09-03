@@ -17,12 +17,13 @@ interface QuerySurfaceProps {
   investigationArea?: InvestigationArea | null;
   setInvestigationArea?: (aoi: InvestigationArea | null) => void;
   currentMapBounds?: any;
+  externalQuery?: string;
   onAnalysisComplete: (query: string, result: AnalysisResponse | null, error: string | null, targetLat: number, targetLng: number) => void;
 }
 
 export const QuerySurface: React.FC<QuerySurfaceProps> = ({ 
   lat, lng, zoom, files, setFiles, benchmarkMode, demoMode, autoLoadDemoAssets, showProcessingTrace, 
-  investigationArea, setInvestigationArea, currentMapBounds,
+  investigationArea, setInvestigationArea, currentMapBounds, externalQuery,
   onAnalysisComplete
 }) => {
   const [query, setQuery] = useState('');
@@ -30,6 +31,13 @@ export const QuerySurface: React.FC<QuerySurfaceProps> = ({
   
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (externalQuery) {
+      setQuery(externalQuery);
+      setMode('active');
+    }
+  }, [externalQuery]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -66,9 +74,10 @@ export const QuerySurface: React.FC<QuerySurfaceProps> = ({
         try {
           const q = query.toLowerCase();
           const loadedFiles: File[] = [];
+          const baseUrl = import.meta.env.BASE_URL || '/';
           
           const loadFile = async (name: string) => {
-            const res = await fetch(`/demo/${name}`);
+            const res = await fetch(`${baseUrl}demo/${name}`);
             const blob = await res.blob();
             return new File([blob], name, { type: 'image/jpeg' });
           };

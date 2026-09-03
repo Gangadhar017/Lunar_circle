@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, HardDrives, WarningCircle, CheckCircle, CaretRight, CaretDown, ShieldWarning } from '@phosphor-icons/react';
+import { X, HardDrives, WarningCircle, CheckCircle, CaretRight, CaretDown, ShieldWarning, FileText, ArrowsLeftRight } from '@phosphor-icons/react';
 import type { AnalysisResponse } from '../../types';
+import { ReportModal } from './ReportModal';
 
 interface SpatialResultCardProps {
   analysis: {
@@ -13,16 +14,34 @@ interface SpatialResultCardProps {
   investigationArea?: any;
   onFlyTo?: (bounds: [[number, number], [number, number]]) => void;
   onClose: () => void;
+  onOpenSwipe?: () => void;
+  canSwipe?: boolean;
 }
 
-export const SpatialResultCard: React.FC<SpatialResultCardProps> = ({ analysis, investigationArea, onFlyTo, onClose }) => {
+export const SpatialResultCard: React.FC<SpatialResultCardProps> = ({ 
+  analysis, 
+  investigationArea, 
+  onFlyTo, 
+  onClose,
+  onOpenSwipe,
+  canSwipe = false,
+}) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const { query, result, error } = analysis;
 
   const isNotTrainedYet = result?.ok === false && result?.execution_summary?.error === 'weights_not_attached';
 
   return (
+    <>
+      {reportOpen && (
+        <ReportModal 
+          analysis={analysis} 
+          investigationArea={investigationArea} 
+          onClose={() => setReportOpen(false)} 
+        />
+      )}
     <div className="spatial-result-card">
       {/* Header */}
       <div style={{ 
@@ -229,35 +248,93 @@ export const SpatialResultCard: React.FC<SpatialResultCardProps> = ({ analysis, 
           </div>
         ) : null}
 
-        {/* Technical Details Disclosure */}
-        {result && result.execution_summary && (
-          <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '16px', marginTop: '8px' }}>
-            <button 
-              onClick={() => setDetailsOpen(!detailsOpen)}
+        {/* Technical Details & Actions */}
+        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '12px', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setReportOpen(true)}
               style={{
-                background: 'transparent', border: 'none', color: 'var(--text-secondary)',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-                padding: 0, fontSize: '12px', fontWeight: 500
+                flex: 1,
+                background: 'rgba(59, 130, 246, 0.12)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                color: '#60A5FA',
+                padding: '6px 10px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
               }}
+              onMouseOver={e => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.22)')}
+              onMouseOut={e => (e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)')}
             >
-              {detailsOpen ? <CaretDown size={14} /> : <CaretRight size={14} />}
-              Technical details
+              <FileText size={14} /> Mission Report
             </button>
-            
-            {detailsOpen && (
-              <div style={{
-                marginTop: '12px', padding: '12px', background: 'var(--bg-base)',
-                borderRadius: '4px', fontSize: '11px', fontFamily: 'var(--font-mono)',
-                color: 'var(--text-disabled)', whiteSpace: 'pre-wrap',
-                maxHeight: '200px', overflowY: 'auto'
-              }}>
-                {JSON.stringify(result.execution_summary, null, 2)}
-              </div>
+
+            {canSwipe && onOpenSwipe && (
+              <button
+                onClick={onOpenSwipe}
+                style={{
+                  flex: 1,
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  color: '#34D399',
+                  padding: '6px 10px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+                onMouseOver={e => (e.currentTarget.style.background = 'rgba(16, 185, 129, 0.22)')}
+                onMouseOut={e => (e.currentTarget.style.background = 'rgba(16, 185, 129, 0.12)')}
+              >
+                <ArrowsLeftRight size={14} /> Swipe Compare
+              </button>
             )}
           </div>
-        )}
+
+          {result && result.execution_summary && (
+            <div>
+              <button 
+                onClick={() => setDetailsOpen(!detailsOpen)}
+                style={{
+                  background: 'transparent', border: 'none', color: 'var(--text-secondary)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '4px 0', fontSize: '11px', fontWeight: 500
+                }}
+              >
+                {detailsOpen ? <CaretDown size={13} /> : <CaretRight size={13} />}
+                Auditable execution details
+              </button>
+              
+              {detailsOpen && (
+                <div style={{
+                  marginTop: '6px', padding: '10px', background: 'var(--bg-base)',
+                  borderRadius: '4px', fontSize: '11px', fontFamily: 'var(--font-mono)',
+                  color: 'var(--text-disabled)', whiteSpace: 'pre-wrap',
+                  maxHeight: '160px', overflowY: 'auto'
+                }}>
+                  {JSON.stringify(result.execution_summary, null, 2)}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
       </div>
     </div>
+    </>
   );
 };
