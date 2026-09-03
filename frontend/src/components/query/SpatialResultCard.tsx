@@ -23,23 +23,7 @@ export const SpatialResultCard: React.FC<SpatialResultCardProps> = ({ analysis, 
   const isNotTrainedYet = result?.ok === false && result?.execution_summary?.error === 'weights_not_attached';
 
   return (
-    <div style={{
-      position: 'absolute',
-      top: '72px',
-      right: '24px',
-      width: '420px',
-      maxWidth: 'calc(100vw - 48px)',
-      maxHeight: 'calc(100vh - 96px)',
-      background: 'var(--bg-panel)',
-      backdropFilter: 'blur(12px)',
-      border: '1px solid var(--color-border)',
-      borderRadius: 'var(--radius-panel)',
-      boxShadow: 'var(--shadow-panel)',
-      zIndex: 1000,
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden'
-    }}>
+    <div className="spatial-result-card">
       {/* Header */}
       <div style={{ 
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
