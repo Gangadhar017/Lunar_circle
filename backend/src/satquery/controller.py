@@ -22,24 +22,17 @@ _RULES: list[tuple[str, str]] = [
 ]
 
 
-def classify(query: str, num_images: int) -> str:
+def classify(query: str, num_images: int = 1) -> str:
     q = query.lower()
     
-    if num_images == 1:
-        if re.search(r"highlight|locate|where|ground", q):
-            return "ground"
-        if re.search(r"describe|caption|scene", q):
-            return "caption"
-        return "vqa"
-    elif num_images == 2:
-        if re.search(r"sar|optical|multimodal|fusion", q):
-            return "fusion"
-        return "change"
-    
-    # Fallback to existing logic if unexpected image count
+    # 1. Primary: Classify requested task directly from the natural language query intent
     for pattern, task in _RULES:
         if re.search(pattern, q):
             return task
+            
+    # 2. Secondary fallback based on image configuration
+    if num_images >= 2:
+        return "change"
     return "vqa"
 
 
