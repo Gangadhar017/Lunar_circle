@@ -63,8 +63,10 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     // Read the API key from environment variables (checking both potential variable names)
     const apiKey = import.meta.env.VITE_CARTO_API_KEY || import.meta.env.VITE_MAPBOX_TOKEN || '';
     
-    // CARTO basemap URL with the correct '?key=' parameter
-    const tileUrl = `https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png?key=${apiKey}`;
+    // CARTO basemap URL — only append key parameter if an API key is actually set
+    const tileUrl = apiKey 
+      ? `https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png?key=${apiKey}`
+      : `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png`;
     
     const tileLayer = L.tileLayer(tileUrl, {
       maxZoom: 18,
