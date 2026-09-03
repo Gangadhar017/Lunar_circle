@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://satquery-ai-skyy.onrender.com';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://satquery-backend-e8rl.onrender.com';
 
 export async function post<T>(endpoint: string, body: FormData): Promise<T> {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
