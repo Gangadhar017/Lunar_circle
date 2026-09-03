@@ -56,7 +56,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       zoomControl: false,
       attributionControl: false,
       minZoom: 2,
-      maxZoom: 18,
+      maxZoom: 19,
       worldCopyJump: true // Seamless panning across dateline without duplicating tiles
     }).setView([lat, lng], zoom);
     
@@ -69,7 +69,8 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       : `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`;
     
     const tileLayer = L.tileLayer(tileUrl, {
-      maxZoom: 18,
+      maxZoom: 19,
+      maxNativeZoom: apiKey ? 18 : 16,
       attribution: apiKey ? '&copy; CARTO' : '&copy; Esri',
       noWrap: true, // Prevents loading tiles outside the standard world bounds
       keepBuffer: 2 // Retains nearby tiles to prevent reloading when panning back
